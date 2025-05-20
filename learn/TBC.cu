@@ -27,6 +27,7 @@ __global__ void cluster_kernel(float *input, float* output)
 
 int main()
 {
+    int N =  512;
     float *input, *output;
     dim3 threadsPerBlock(16, 16);
     dim3 numBlocks(N / threadsPerBlock.x, N / threadsPerBlock.y);

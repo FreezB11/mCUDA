@@ -20,6 +20,8 @@ __global__ void MatAdd(float A[N][N], float B[N][N], float C[N][N]){
 }
 
 int main(){
+    int N = 512;
+    float *A, *B, *C;
     ∕∕ Kernel invocation
     dim3 threadsPerBlock(16, 16);
     dim3 numBlocks(N ∕ threadsPerBlock.x, N ∕ threadsPerBlock.y);

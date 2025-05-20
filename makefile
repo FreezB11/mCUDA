@@ -1,11 +1,27 @@
 NVCC = nvcc
-FLAGS = 
-cu = ${wildcard .${HOME}/src/*.cu}
-obj = ${cu:.cu=.o}
+FLAGS = -O2
+SRC_DIR := src
+BUILD_DIR := build
 
-all: ${obj}
-	${NVCC} ${FLAGS} main.cu ${obj} -o build/main 
+CU_FILES := $(wildcard $(SRC_DIR)/*.cu)
+OBJ_FILES := $(patsubst $(SRC_DIR)/%.cu, $(BUILD_DIR)/%.o, $(CU_FILES))
 
-%.o: %.cu
-	@echo "compiling $< to $@"
-	${NVCC} ${FLAGS} -c $< -o $@
+# Print file lists for debugging
+$(info CU_FILES = $(CU_FILES))
+$(info OBJ_FILES = $(OBJ_FILES))
+
+all: $(BUILD_DIR)/main
+
+$(BUILD_DIR)/main: $(OBJ_FILES)
+	@echo "Linking $@"
+	$(NVCC) $(FLAGS) -o $@ $^
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cu | $(BUILD_DIR)
+	@echo "Compiling $< -> $@"
+	$(NVCC) $(FLAGS) -c $< -o $@
+
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
+clean:
+	rm -rf $(BUILD_DIR)
