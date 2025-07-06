@@ -1,27 +1,37 @@
+# Makefile for mCUDA - Simple CUDA Library
+# Author: HS4T
+
+# Compiler
 NVCC = nvcc
-FLAGS = -O2
-SRC_DIR := src
-BUILD_DIR := build
 
-CU_FILES := $(wildcard $(SRC_DIR)/*.cu)
-OBJ_FILES := $(patsubst $(SRC_DIR)/%.cu, $(BUILD_DIR)/%.o, $(CU_FILES))
+# File paths
+INCLUDE_DIR = include
+SRC_DIR = src
+TEST_DIR = test
 
-# Print file lists for debugging
-$(info CU_FILES = $(CU_FILES))
-$(info OBJ_FILES = $(OBJ_FILES))
+# Files
+CU_SRC = $(SRC_DIR)/mCUDA.cu
+OBJ = mCUDA.o
+LIB = libmCUDA.a
+TEST_SRC = $(TEST_DIR)/main.cc
+TEST_BIN = $(TEST_DIR)/main
 
-all: $(BUILD_DIR)/main
+# Build the static library
+all: $(LIB)
 
-$(BUILD_DIR)/main: $(OBJ_FILES)
-	@echo "Linking $@"
-	$(NVCC) $(FLAGS) -o $@ $^
+$(OBJ): $(CU_SRC)
+	$(NVCC) -I$(INCLUDE_DIR) -c $(CU_SRC) -o $(OBJ)
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cu | $(BUILD_DIR)
-	@echo "Compiling $< -> $@"
-	$(NVCC) $(FLAGS) -c $< -o $@
+$(LIB): $(OBJ)
+	ar rcs $(LIB) $(OBJ)
 
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+# Build and run test
+test: all
+	$(NVCC) -I$(INCLUDE_DIR) $(TEST_SRC) -L. -lmCUDA -o $(TEST_BIN)
 
+run: test
+	./$(TEST_BIN)
+
+# Clean all generated files
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -f $(OBJ) $(LIB) $(TEST_BIN)
