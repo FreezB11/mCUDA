@@ -1,37 +1,49 @@
 # Makefile for mCUDA - Simple CUDA Library
 # Author: HS4T
 
-# Compiler
+# Compilers
 NVCC = nvcc
+CXX  = g++
 
 # File paths
 INCLUDE_DIR = include
 SRC_DIR = src
 TEST_DIR = test
 
-# Files
+# Source files
 CU_SRC = $(SRC_DIR)/mCUDA.cu
-OBJ = mCUDA.o
+CPP_SRC = $(SRC_DIR)/mCUDA.cc
+
+# Object files
+CU_OBJ = mCUDA.o
+CPP_OBJ = mCUDA_host.o
 LIB = libmCUDA.a
+
+# Test files
 TEST_SRC = $(TEST_DIR)/main.cc
 TEST_BIN = $(TEST_DIR)/main
 
 # Build the static library
 all: $(LIB)
 
-$(OBJ): $(CU_SRC)
-	$(NVCC) -I$(INCLUDE_DIR) -c $(CU_SRC) -o $(OBJ)
+$(CU_OBJ): $(CU_SRC)
+	$(NVCC) -I$(INCLUDE_DIR) -c $< -o $@
 
-$(LIB): $(OBJ)
-	ar rcs $(LIB) $(OBJ)
+$(CPP_OBJ): $(CPP_SRC)
+	$(CXX) -I$(INCLUDE_DIR) -c $< -o $@
 
-# Build and run test
-test: all
-	$(NVCC) -I$(INCLUDE_DIR) $(TEST_SRC) -L. -lmCUDA -o $(TEST_BIN)
+$(LIB): $(CU_OBJ) $(CPP_OBJ)
+	ar rcs $(LIB) $(CU_OBJ) $(CPP_OBJ)
 
-run: test
+# Build test binary with g++
+$(TEST_BIN): $(TEST_SRC) $(LIB)
+	$(CXX) $(TEST_SRC) -I$(INCLUDE_DIR) -L. -lmCUDA -L/usr/local/cuda/lib64 -lcudart -o $(TEST_BIN)
+
+test: $(TEST_BIN)
+
+run: $(TEST_BIN)
 	./$(TEST_BIN)
 
 # Clean all generated files
 clean:
-	rm -f $(OBJ) $(LIB) $(TEST_BIN)
+	rm -f $(CU_OBJ) $(CPP_OBJ) $(LIB) $(TEST_BIN)

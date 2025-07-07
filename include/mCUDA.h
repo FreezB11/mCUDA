@@ -1,14 +1,16 @@
-#ifndef MCUDA_H
-#define MCUDA_H
+/**
+    @file: mCUDA.h
+    @author: HSAY
+*/
+
+// #include <cuda_runtime.h>
 
 #ifdef __cplusplus
-extern "C" {
+    extern "C" {
 #endif
 
-void launchAddKernel(float* a, float* b, float* result, int n);
+void strassenMultiply(const float* A, const float* B, float* C, int n);
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif // MCUDA_H

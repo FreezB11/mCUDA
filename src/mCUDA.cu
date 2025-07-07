@@ -1,31 +1,38 @@
 #include <cuda_runtime.h>
-#include "mCUDA.h"
+#include <cstring>
 
-__global__ void addKernel(float* a, float* b, float* result, int n) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx < n) {
-        result[idx] = a[idx] + b[idx];
+__global__ void matMulKernel(const float* A, const float* B, float* C, int n) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (row < n && col < n) {
+        float sum = 0.0f;
+        for (int k = 0; k < n; ++k)
+            sum += A[row * n + k] * B[k * n + col];
+        C[row * n + col] = sum;
     }
 }
 
-void launchAddKernel(float* a, float* b, float* result, int n) {
-    float *d_a, *d_b, *d_result;
+// GPU wrapper
+void gpuMatrixMul(const float* A, const float* B, float* C, int n) {
+    size_t bytes = n * n * sizeof(float);
+    float *d_A, *d_B, *d_C;
 
-    size_t size = n * sizeof(float);
-    cudaMalloc(&d_a, size);
-    cudaMalloc(&d_b, size);
-    cudaMalloc(&d_result, size);
+    cudaMalloc(&d_A, bytes);
+    cudaMalloc(&d_B, bytes);
+    cudaMalloc(&d_C, bytes);
 
-    cudaMemcpy(d_a, a, size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_b, b, size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_A, A, bytes, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_B, B, bytes, cudaMemcpyHostToDevice);
 
-    int threads = 256;
-    int blocks = (n + threads - 1) / threads;
-    addKernel<<<blocks, threads>>>(d_a, d_b, d_result, n);
+    dim3 threads(16, 16);
+    dim3 blocks((n + 15) / 16, (n + 15) / 16);
 
-    cudaMemcpy(result, d_result, size, cudaMemcpyDeviceToHost);
+    matMulKernel<<<blocks, threads>>>(d_A, d_B, d_C, n);
+    cudaDeviceSynchronize();
 
-    cudaFree(d_a);
-    cudaFree(d_b);
-    cudaFree(d_result);
+    cudaMemcpy(C, d_C, bytes, cudaMemcpyDeviceToHost);
+
+    cudaFree(d_A);
+    cudaFree(d_B);
+    cudaFree(d_C);
 }
